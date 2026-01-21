@@ -33,7 +33,7 @@ def main():
 
   parser.add_argument("--sortBy", 
       default=None,
-      help="Output .h5ad file")
+      help="Cols to sort by in _decreasing_ order of importance")
 
   parser.add_argument(
       "--compression",
@@ -70,7 +70,8 @@ def main():
   if args.sortBy != None:
 
     print("Sorting...") 
-    fields = args.sortBy.split(",")
+    # reverse since 1st sorted index is the last one for lexsort
+    fields = args.sortBy.split(",").reverse()
 
     # check if all fields are present
     missing = set(fields) - set(adata.obs.columns)

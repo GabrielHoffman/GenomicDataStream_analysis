@@ -8,29 +8,39 @@ spec = matrix(c(
   'nthreads', 'n', 1, 'numeric',
   'ncells', 'c', 1, 'numeric',
   'nPC', 'k', 1, 'numeric',
+  'scaleAndCenter', 's', 0, "logical",
   'out', 'o', 1, 'character'
 ), byrow=TRUE, ncol=4)
 
 # Parse the arguments
 opt = getopt(spec)
 
+if( is.null(opt$scaleAndCenter) ){
+  opt$scaleAndCenter = FALSE
+}
+
 suppressPackageStartupMessages({
 library(GenomicDataStream)
 library(SingleCellExperiment)
-library(zellkonverter)
+library(BiocParallel)
 library(BiocSingular)
+library(HDF5Array)
 })
 
-# run_PCA_h5ad.R --h5ad ~/Downloads/4e6932db-5a78-40e4-b961-f87f66ba139a.h5ad
+
+
 
 # Read data
-sce = readH5AD(opt$h5ad, use_hdf5=TRUE, raw=TRUE, verbose=FALSE, uns=FALSE, obsp=FALSE, obsm=FALSE)
+sce = readH5AD(opt$h5ad)
 
 sce = sce[,seq(opt$ncells)]
-counts(sce) = assay(sce, "X")
 
 # Compute log CPM
 sce$total_counts = colSums2(counts(sce))
+
+# 5000 genes
+idx = as.integer(seq(1, nrow(sce), length.out=5000))
+sce = sce[idx,]
 
 lib.size = sce$total_counts
 prior.count = 1
@@ -39,7 +49,7 @@ logcounts(sce) <- t(log2(t(counts(sce) + prior.count)) - log2(lib.size) + log2(1
 if( opt$method == "PCAstream" ){
 
   res_time = system.time({
-    res <- PCAstream(sce, opt$nPC, assay="logcounts", threads=opt$nthreads)
+    res <- PCAstream(sce, opt$nPC, assay="logcounts", threads=opt$nthreads, scaleAndCenter=opt$scaleAndCenter)
   })
 
   res_time = data.frame(t(data.frame(res_time)), Method="PCAstream")
@@ -47,30 +57,45 @@ if( opt$method == "PCAstream" ){
 
 if( opt$method == "IRLBA" ){
   res_time = system.time({
-    out <- runSVD( t(logcounts(sce)), k=opt$nPC, center=TRUE, scale=TRUE, BSPARAM=IrlbaParam())
+    out <- runSVD( t(logcounts(sce)), k=opt$nPC, center=opt$scaleAndCenter, scale=opt$scaleAndCenter, BSPARAM=IrlbaParam(), BPPARAM=SnowParam(opt$nthreads))
   })
   res_time = data.frame(t(data.frame(res_time)), Method="IRLBA")
 }
 
 if( opt$method == "RSVD" ){
   res_time = system.time({
-    out <- runSVD( t(logcounts(sce)), k=opt$nPC, center=TRUE, scale=TRUE, BSPARAM=RandomParam())
+    out <- runSVD( t(logcounts(sce)), k=opt$nPC, center=opt$scaleAndCenter, scale=opt$scaleAndCenter, BSPARAM=RandomParam(), BPPARAM=SnowParam(opt$nthreads))
   })
-  res_time = data.frame(t(data.frame(res_time)), Method="Randomized SVD")
+  res_time = data.frame(t(data.frame(res_time)), Method="RSVD")
 }
 
-if( opt$method == "exact" ){
+if( opt$method == "Exact" ){
   res_time = system.time({
-    out <- runSVD( t(logcounts(sce)), k=opt$nPC, center=TRUE, scale=TRUE, BSPARAM=ExactParam())
+    out <- runSVD( t(logcounts(sce)), k=opt$nPC, center=opt$scaleAndCenter, scale=opt$scaleAndCenter, BSPARAM=ExactParam(), BPPARAM=SnowParam(opt$nthreads))
   })
-  res_time = data.frame(t(data.frame(res_time)), Method="Exact SVD")
+  res_time = data.frame(t(data.frame(res_time)), Method="Exact")
+}
+
+if( opt$method == "Standard" ){
+  library(RhpcBLASctl)
+  omp_set_num_threads(opt$nthreads)
+  blas_set_num_threads(opt$nthreads)
+  res_time = system.time({
+    X <- as.matrix(t(logcounts(sce)))
+    if( opt$scaleAndCenter ){
+      X <- scale(X)
+    }
+    out <- svd(X, nu=opt$nPC, nv=opt$nPC)
+  })
+  res_time = data.frame(t(data.frame(res_time)), Method="Standard")
 }
 
 res_time$ngenes = nrow(sce)
 res_time$ncells = ncol(sce)
 res_time$file = opt$h5ad
+res_time$scaleAndCenter = opt$scaleAndCenter
 
-write.table(res_time, file=opt$out, quote=FALSE, sep="\t")
+write.table(res_time, file=opt$out, quote=FALSE, sep="\t", row.names=FALSE)
 
 
 

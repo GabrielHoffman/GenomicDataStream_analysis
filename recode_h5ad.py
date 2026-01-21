@@ -82,7 +82,7 @@ def main():
     # get sorted order
     # reverse since 1st sorted index is the last one for lexsort
     idx = np.lexsort( 
-      keys = tuple(adata.obs[c].to_numpy() for c in fields).reverse() )
+      keys = tuple(adata.obs[c].to_numpy() for c in fields[::-1]) )
 
     # apply reordering
     adata = adata[idx,:]

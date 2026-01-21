@@ -70,8 +70,7 @@ def main():
   if args.sortBy != None:
 
     print("Sorting...") 
-    # reverse since 1st sorted index is the last one for lexsort
-    fields = args.sortBy.split(",").reverse()
+    fields = args.sortBy.split(",")
 
     # check if all fields are present
     missing = set(fields) - set(adata.obs.columns)
@@ -81,8 +80,9 @@ def main():
       sys.exit(2)     
 
     # get sorted order
+    # reverse since 1st sorted index is the last one for lexsort
     idx = np.lexsort( 
-      keys = tuple(adata.obs[c].to_numpy() for c in fields) )
+      keys = tuple(adata.obs[c].to_numpy() for c in fields).reverse() )
 
     # apply reordering
     adata = adata[idx,:]

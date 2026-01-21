@@ -39,7 +39,7 @@ def main():
       "--compression",
       default=None,
       choices=[None, "None", "gzip", "lzf"],
-      help="Optional compression for output file (gzip or lzf). Default: none")
+      help="Optional compression for output file (gzip or lzf). Default: None")
 
   parser.add_argument(
       "--format",

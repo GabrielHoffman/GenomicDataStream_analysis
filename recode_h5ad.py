@@ -62,9 +62,16 @@ def main():
   print("Read file...") 
   adata = ad.read_h5ad(args.input, backed=backed) 
 
-  # remove fields
-  # adata.obsm = None
-  # adata.var = None
+  # Find counts entry
+  if adata.X is not None:
+      print("Using AnnData X matrix...")
+  else:
+    if 'X' in adata.layers: 
+      print("Using AnnData layers/X matrix...")
+      adata.X = adata.layers['X']
+    elif 'counts' in adata.layers: 
+      print("Using AnnData layers/counts matrix...")
+      adata.X = adata.layers['counts']
 
     # sort cells by type  
   if args.sortBy != None:

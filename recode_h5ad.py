@@ -45,7 +45,11 @@ def main():
       "--format",
       default="CSR",
       choices=["CSR", "CSC"],
-      help="Store sparse count matrix in CSR or CSC format. Default: CSR")
+      help="Store sparse count matrix in CSR or CSC format.  CSR allows faster access to cells, CSC gives faster access to genes. Default: CSR")
+
+  parser.add_argument("--noLibSize", 
+      action="store_true",
+      help="Skip computing libSize for each cell")
 
   # parse args
   args = parser.parse_args()
@@ -95,13 +99,20 @@ def main():
     adata = adata[idx,:]
 
   if args.format == "CSC":
-    if not sp.isspmatrix_csc(adata.X):
-      print("Converting .X to CSC sparse format...")
+
+    if not args.noLibSize or not sp.isspmatrix_csc(adata.X):
       if backed is None:
         adata = adata.copy()
       else:
         adata = adata.to_memory()
 
+    if not args.noLibSize:
+      # compute library size for each cell
+      print("Compute libSize...")
+      adata.obs['libSize'] = adata.X.sum(axis=1)
+
+    if not sp.isspmatrix_csc(adata.X):
+      print("Converting .X to CSC sparse format...")
       # convert matrix type
       adata.X = sp.csc_matrix(adata.X)
 
@@ -115,6 +126,11 @@ def main():
       
       # convert matrix type
       adata.X = sp.csr_matrix(adata.X)
+
+      if not args.noLibSize:
+        # compute library size for each cell
+        print("Compute libSize...")
+        adata.obs['libSize'] = adata.X.sum(axis=1)
 
   if args.output.is_file():
     args.output.unlink(missing_ok=True)

@@ -29,7 +29,7 @@ def main():
 
   parser.add_argument("--ondisk", 
       action="store_true",
-      help="Output .h5ad file")
+      help="Use filebacked mode to reduce memory usage")
 
   parser.add_argument("--sortBy", 
       default=None,

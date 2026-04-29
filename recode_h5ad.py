@@ -14,7 +14,7 @@ def main():
   #-------------------
 
   parser = argparse.ArgumentParser(
-      description="Convert an AnnData .h5ad file so that X is stored in CSC sparse format."
+      description="Convert an AnnData .h5ad file so that X (and raw/X) is stored in CSC sparse format (v1.1)"
   )
 
   parser.add_argument("--input",
@@ -29,7 +29,7 @@ def main():
 
   parser.add_argument("--ondisk", 
       action="store_true",
-      help="Use filebacked mode to reduce memory usage")
+      help="Use file-backed mode to reduce memory usage")
 
   parser.add_argument("--sortBy", 
       default=None,
@@ -45,7 +45,7 @@ def main():
       "--format",
       default="CSR",
       choices=["CSR", "CSC"],
-      help="Store sparse count matrix in CSR or CSC format.  CSR allows faster access to cells, CSC gives faster access to genes. Default: CSR")
+      help="Store sparse count matrix (X and raw/X) in CSR or CSC format.  CSR allows faster access to cells, CSC gives faster access to genes. Default: CSR")
 
   parser.add_argument("--noLibSize", 
       action="store_true",
@@ -77,7 +77,7 @@ def main():
       print("Using AnnData layers/counts matrix...")
       adata.X = adata.layers['counts']
 
-    # sort cells by type  
+  # sort cells by type  
   if args.sortBy != None:
 
     print("Sorting...") 
@@ -109,14 +109,24 @@ def main():
     if not args.noLibSize:
       # compute library size for each cell
       print("Compute libSize...")
-      adata.obs['libSize'] = adata.X.sum(axis=1)
+      if adata.raw is not None:
+        adata.obs['libSize'] = adata.raw.X.sum(axis=1)
+      else:
+        adata.obs['libSize'] = adata.X.sum(axis=1)
 
     if not sp.isspmatrix_csc(adata.X):
       print("Converting .X to CSC sparse format...")
       # convert matrix type
       adata.X = sp.csc_matrix(adata.X)
 
+      if adata.raw is not None:
+        print("Converting .row.X to CSC sparse format...")
+        raw = adata.raw.to_adata()
+        raw.X = sp.csc_matrix(raw.X)
+        adata.raw = raw
+
   if args.format == "CSR":
+    # X
     if not sp.isspmatrix_csr(adata.X):
       print("Converting .X to CSR sparse format...")
       if backed is None:
@@ -127,10 +137,19 @@ def main():
       # convert matrix type
       adata.X = sp.csr_matrix(adata.X)
 
+      if adata.raw is not None:
+        print("Converting .row.X to CSR sparse format...")
+        raw = adata.raw.to_adata()
+        raw.X = sp.csr_matrix(raw.X)
+        adata.raw = raw
+
       if not args.noLibSize:
         # compute library size for each cell
         print("Compute libSize...")
-        adata.obs['libSize'] = adata.X.sum(axis=1)
+        if adata.raw is not None:
+          adata.obs['libSize'] = adata.raw.X.sum(axis=1)
+        else:
+          adata.obs['libSize'] = adata.X.sum(axis=1)
 
   if args.output.is_file():
     args.output.unlink(missing_ok=True)

@@ -7,6 +7,7 @@ import numpy as np
 import scipy.sparse as sp
 from pathlib import Path
 import importlib
+import hdf5plugin
 
 def main():
 
@@ -38,8 +39,8 @@ def main():
   parser.add_argument(
       "--compression",
       default=None,
-      choices=[None, "None", "gzip", "lzf"],
-      help="Optional compression for output file (gzip or lzf). Default: None")
+      choices=[None, "None", "gzip", "lzf", "zstd"],
+      help="Optional compression for output file (gzip, lzf, zstd). Default: None")
 
   parser.add_argument(
       "--format",
@@ -168,7 +169,12 @@ def main():
 
   print("Writing H5AD...") 
 
-  adata.write_h5ad( args.output, compression=args.compression )
+  compressMethod = args.compression
+
+  if compressMethod == "zstd":
+    compressMethod = hdf5plugin.FILTERS["zstd"]
+
+  adata.write_h5ad( args.output, compression=compressMethod )
 
 
 

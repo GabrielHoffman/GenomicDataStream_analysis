@@ -6,7 +6,7 @@ import anndata as ad
 import numpy as np
 import scipy.sparse as sp
 from pathlib import Path
-
+import importlib
 
 def main():
 
@@ -62,7 +62,7 @@ def main():
   if args.compression == "None":
     args.compression = None
 
-  print("AnnData version:", ad.__version__) 
+  print("AnnData version:", importlib.metadata.version("anndata")) 
 
   # read file
   print("Read file...") 

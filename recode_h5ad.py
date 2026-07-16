@@ -6,7 +6,7 @@ import anndata as ad
 import numpy as np
 import scipy.sparse as sp
 from pathlib import Path
-import importlib
+from packaging.version import parse
 import hdf5plugin
 
 def main():
@@ -68,7 +68,7 @@ def main():
   version = importlib.metadata.version("anndata")
   print("AnnData version:", version) 
 
-  if( parse(version) >= parse("0.13.0")):
+  if parse(version) >= parse("0.13.0"):
     # for compatibility with anndataR
     ad.settings.allow_write_nullable_strings = False
 

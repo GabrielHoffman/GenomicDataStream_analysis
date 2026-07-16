@@ -62,9 +62,14 @@ def main():
   if args.compression == "None":
     args.compression = None
 
+  print("AnnData version:", ad.__version__) 
+
   # read file
   print("Read file...") 
   adata = ad.read_h5ad(args.input, backed=backed) 
+
+  # Replace forward slashes in column names of data.obs
+  adata.obs.columns = adata.obs.columns.str.replace("/", "_", regex=False)
 
   # Find counts entry
   if adata.X is not None:

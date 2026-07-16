@@ -6,6 +6,7 @@ import anndata as ad
 import numpy as np
 import scipy.sparse as sp
 from pathlib import Path
+import importlib
 from packaging.version import parse
 import hdf5plugin
 

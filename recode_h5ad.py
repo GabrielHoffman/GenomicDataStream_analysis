@@ -8,9 +8,6 @@ import scipy.sparse as sp
 from pathlib import Path
 import importlib
 
-# for compatibility with anndataR
-ad.settings.allow_write_nullable_strings = False
-
 def main():
 
   # Define arguments
@@ -66,7 +63,13 @@ def main():
     args.compression = None
 
   print("Script version:", "jul.15.2026")
-  print("AnnData version:", importlib.metadata.version("anndata")) 
+
+  version = importlib.metadata.version("anndata")
+  print("AnnData version:", version) 
+
+  if( parse(version) >= parse("0.13.0")):
+    # for compatibility with anndataR
+    ad.settings.allow_write_nullable_strings = False
 
   # read file
   print("Read file...") 

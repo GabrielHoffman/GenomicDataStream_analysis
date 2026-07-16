@@ -15,7 +15,7 @@ def main():
   #-------------------
 
   parser = argparse.ArgumentParser(
-      description="Convert an AnnData .h5ad file so that X (and raw/X) is stored in CSC sparse format (v1.1)"
+      description="Convert an AnnData .h5ad file so that X (and raw/X) is stored in CSC sparse format (v jul.16.2026)"
   )
 
   parser.add_argument("--input",
@@ -63,7 +63,7 @@ def main():
   if args.compression == "None":
     args.compression = None
 
-  print("Script version:", "jul.15.2026")
+  print("Script version:", "jul.16.2026")
 
   version = importlib.metadata.version("anndata")
   print("AnnData version:", version) 

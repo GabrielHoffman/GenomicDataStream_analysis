@@ -16,7 +16,7 @@ def main():
   #-------------------
 
   parser = argparse.ArgumentParser(
-      description="Convert an AnnData .h5ad file so that X (and raw/X) is stored in CSC sparse format (v jul.16.2026)"
+      description="Convert an AnnData .h5ad file so that X (and raw/X) is stored in CSC sparse format (v aug.26.2026)"
   )
 
   parser.add_argument("--input",
@@ -128,15 +128,16 @@ def main():
       else:
         adata.obs['libSize'] = adata.X.sum(axis=1)
 
-    if not sp.isspmatrix_csc(adata.X):
+    # if matrix is not a CSC of doubles
+    if not (sp.isspmatrix_csc(adata.X) and adata.X.dtype == np.float64):
       print("Converting .X to CSC sparse format...")
       # convert matrix type
-      adata.X = sp.csc_matrix(adata.X)
+      adata.X = sp.csc_matrix(adata.X, dtype=np.float64)
 
       if adata.raw is not None:
         print("Converting .row.X to CSC sparse format...")
         raw = adata.raw.to_adata()
-        raw.X = sp.csc_matrix(raw.X)
+        raw.X = sp.csc_matrix(raw.X, dtype=np.float64)
         adata.raw = raw
 
   if args.format == "CSR":
@@ -149,12 +150,12 @@ def main():
         adata = adata.to_memory()
       
       # convert matrix type
-      adata.X = sp.csr_matrix(adata.X)
+      adata.X = sp.csr_matrix(adata.X, dtype=np.float64)
 
       if adata.raw is not None:
         print("Converting .row.X to CSR sparse format...")
         raw = adata.raw.to_adata()
-        raw.X = sp.csr_matrix(raw.X)
+        raw.X = sp.csr_matrix(raw.X, dtype=np.float64)
         adata.raw = raw
 
       if not args.noLibSize:

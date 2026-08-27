@@ -64,7 +64,7 @@ def main():
   if args.compression == "None":
     args.compression = None
 
-  print("Script version:", "jul.16.2026")
+  print("Script version:", "aug.26.2026")
 
   version = importlib.metadata.version("anndata")
   print("AnnData version:", version) 

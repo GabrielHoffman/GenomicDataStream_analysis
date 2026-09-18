@@ -117,7 +117,8 @@ def main(argv):
 
       # Concatenate data
       print(" Concatenating data...")
-      adata = ad.concat(adatas[:])
+      # Outer join to save _all_ genes
+      adata = ad.concat(adatas[:], join="outer")
 
       # add .var data (i.e. rowData) to new object
       # adata.var = adatas[1].var
